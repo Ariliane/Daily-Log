@@ -170,6 +170,22 @@ function periodStarts() {
     .filter((k) => db.entries[k].period && !db.entries[addDays(k, -1)]?.period);
 }
 
+// The answers to "when did your last period start?" and "how long are your cycles?", as of `date`.
+function cycleFacts(date) {
+  const starts = periodStarts().filter((k) => k <= date);
+  if (!starts.length) return null;
+  const last = starts[starts.length - 1];
+  const ago = daysBetween(last, date);
+  const lengths = starts.slice(1).map((k, i) => daysBetween(starts[i], k)).slice(-6);
+  const avgLen = lengths.length ? Math.round(avg(lengths)) : null;
+  return h('div', { style: 'margin-bottom:10px' },
+    h('p', null, h('b', null, 'Last period started: '),
+      fmtDate(last, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }),
+      h('span', { class: 'muted' }, ago === 0 ? ' (today)' : ago === 1 ? ' (yesterday)' : ` (${ago} days ago)`)),
+    avgLen && h('p', { class: 'muted' },
+      `Cycles average ${avgLen} days · next expected around ${fmtDate(addDays(last, avgLen), { month: 'short', day: 'numeric' })}`));
+}
+
 function backupDue() {
   if (Object.keys(db.entries).length < 3) return false;
   if (!db.lastBackup) return true;
@@ -307,7 +323,8 @@ function renderToday() {
           onchange: (ev) => { if (ev.target.value && ev.target.value <= todayKey()) { state.date = ev.target.value; render(); } },
         })),
       h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Next day', disabled: isToday, onclick: () => go(1) }, '›')),
-    cd && h('p', { style: 'text-align:center' }, h('span', { class: 'chip-info' }, `Cycle day ${cd}`)),
+    cd && h('p', { style: 'text-align:center' }, h('span', { class: 'chip-info' },
+      `Cycle day ${cd} · started ${fmtDate(addDays(date, 1 - cd), { month: 'short', day: 'numeric' })}`)),
 
     card('Sleep',
       field('Hours slept last night', numberInput(e.sleepHours, (v) => setField('sleepHours', v), { class: 'hours', step: 0.5, min: 0, max: 24 })),
@@ -347,6 +364,7 @@ function renderToday() {
       }))),
 
     card('Cycle',
+      cycleFacts(date),
       h('p', { class: 'muted' }, 'On your period today? Tap the flow. Tap again to clear.'),
       segmented(FLOWS.map((f) => ({ label: f, value: f })), e.period ?? null, (v) => { setField('period', v); render(); })),
 
