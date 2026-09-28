@@ -165,9 +165,10 @@ td.num, th.num { text-align: right; }
 .pre { white-space: pre-wrap; }
 
 /* Settings */
-.set-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.set-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .set-row:first-of-type { border-top: 0; }
-.set-row .name { flex: 1; min-width: 0; }
+.set-row .name { flex: 1 1 140px; min-width: 0; }
+.set-row input[type="text"] { flex: 1 1 160px; width: auto; }
 .set-row select { width: auto; }
 
 /* Tab bar */

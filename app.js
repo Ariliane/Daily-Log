@@ -72,7 +72,7 @@ function save() {
 }
 
 let db = load();
-const state = { view: 'today', date: todayKey(), range: 30, showLibrary: false, renaming: null };
+const state = { view: 'today', date: todayKey(), range: 30, showLibrary: false, renaming: null, editingOptions: null };
 
 // ---------- helpers ----------
 
@@ -454,8 +454,14 @@ function renderSummary() {
           h('thead', null, h('tr', null, h('th', null, 'Symptom'), h('th', { class: 'num' }, 'Days'), h('th', { class: 'num' }, 'Avg severity'), h('th', { class: 'num' }, 'Severe days'))),
           h('tbody', null, present.map((s) => {
             const sevs = logged.map((d) => sevOn(d, s.id)).filter((v) => v > 0);
+            const ctxCounts = {};
+            for (const d of logged) {
+              const r = E(d).symptoms?.[s.id];
+              if (r?.sev > 0) for (const c of r.ctx || []) ctxCounts[c] = (ctxCounts[c] || 0) + 1;
+            }
+            const ctxLine = Object.entries(ctxCounts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c} ${n}`).join(' · ');
             return h('tr', null,
-              h('td', null, s.name),
+              h('td', null, s.name, ctxLine ? h('span', { class: 'muted', style: 'display:block' }, ctxLine) : null),
               h('td', { class: 'num' }, String(sevs.length)),
               h('td', { class: 'num' }, SEV_LABELS[Math.round(avg(sevs))] ),
               h('td', { class: 'num' }, String(sevs.filter((v) => v === 3).length)));
@@ -566,6 +572,34 @@ function renderSummary() {
 
 // ---------- Settings ----------
 
+// Optional chips shown under a symptom on the Today screen (e.g. where it hurts, or when it happens).
+function optionsRow(s) {
+  const input = h('input', {
+    type: 'text', value: (s.contexts || []).join(', '), placeholder: 'e.g. Morning, Evening',
+    'aria-label': `Options for ${s.name}, separated by commas`,
+  });
+  const done = (keep) => {
+    if (keep) {
+      const list = [...new Set(input.value.split(',').map((x) => x.trim()).filter(Boolean))];
+      if (list.length) s.contexts = list;
+      else delete s.contexts;
+      save();
+    }
+    state.editingOptions = null;
+    render();
+  };
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') done(true);
+    if (ev.key === 'Escape') done(false);
+  });
+  setTimeout(() => input.focus());
+  return h('div', { class: 'set-row', style: 'flex-wrap:wrap' },
+    h('span', { class: 'name', style: 'flex-basis:100%' }, s.name, h('span', { class: 'muted', style: 'display:block' }, 'Options to tap, separated by commas. Leave empty for none.')),
+    input,
+    h('button', { type: 'button', class: 'btn secondary', onclick: () => done(true) }, 'Save'),
+    h('button', { type: 'button', class: 'link-btn', onclick: () => done(false) }, 'Cancel'));
+}
+
 function renameRow(s) {
   const input = h('input', { type: 'text', value: s.name, 'aria-label': `New name for ${s.name}` });
   const done = (keep) => {
@@ -590,12 +624,17 @@ function renderSettings() {
     const list = db.symptoms.filter((s) => s.tier === tier);
     return h('div', null,
       h('h3', null, label),
-      list.length ? list.map((s) => state.renaming === s.id ? renameRow(s) : h('div', { class: 'set-row' },
-        h('span', { class: 'name' }, s.name),
+      list.length ? list.map((s) => state.renaming === s.id ? renameRow(s) : state.editingOptions === s.id ? optionsRow(s) : h('div', { class: 'set-row' },
+        h('span', { class: 'name' }, s.name,
+          s.contexts?.length ? h('span', { class: 'muted', style: 'display:block' }, s.contexts.join(' · ')) : null),
         h('button', {
           type: 'button', class: 'link-btn',
           onclick: () => { state.renaming = s.id; render(); },
         }, 'Rename'),
+        h('button', {
+          type: 'button', class: 'link-btn',
+          onclick: () => { state.editingOptions = s.id; render(); },
+        }, 'Options'),
         h('select', {
           'aria-label': `Where ${s.name} shows up`,
           onchange: (ev) => { s.tier = ev.target.value; save(); render(); },
