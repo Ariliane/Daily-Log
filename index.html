@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ribbon Daily Log</title>
+  <meta name="description" content="A private, offline daily log.">
+  <meta name="theme-color" content="#b84a72">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app" aria-live="polite"></main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <nav class="tabbar" aria-label="Sections">
+    <button type="button" data-view="today">Today</button>
+    <button type="button" data-view="history">History</button>
+    <button type="button" data-view="summary">Summary</button>
+    <button type="button" data-view="settings">Settings</button>
+  </nav>
+  <noscript>This app needs JavaScript turned on.</noscript>
+  <script src="app.js"></script>
+</body>
+</html>
