@@ -652,7 +652,6 @@ function renderSettings() {
     card('Your data',
       h('p', null, 'Everything is stored only in this browser, on this phone. Nothing is sent anywhere.'),
       h('p', { class: 'muted' }, db.lastBackup ? `Last backup: ${new Date(db.lastBackup).toLocaleString()}` : 'No backup saved yet.'),
-      h('p', { class: 'muted' }, 'A backup is also how you share with Claude: save it to your Drive, then delete it when you’re done.'),
       h('div', { class: 'row' },
         h('button', { type: 'button', class: 'btn', onclick: exportData }, 'Save backup'),
         h('button', { type: 'button', class: 'btn secondary', onclick: () => fileIn.click() }, 'Restore from backup'),
